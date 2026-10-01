@@ -1,0 +1,48 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next
+/out
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# vercel
+.vercel
+
+# qa artifacts — فيها بيانات اعتماد
+qa.mjs
+qa-*.png
+qa-*.mjs
+probe-*.mjs
+admin-*.mjs
+dev.log
+prod.log
+front.log
+*.local
+
+# ميديا مؤقتة + ملفات Supabase CLI المؤقتة
+Gemini_Generated_Image_*.jpg
+final-login.png
+/supabase/.temp
+
+# لوحة الإدارة مستودع مستقل — مش جزء من ريبو موقع الموظفين
+/Al-Rahma-Job-Admin
