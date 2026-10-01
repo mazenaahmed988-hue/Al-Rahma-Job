@@ -46,3 +46,6 @@ final-login.png
 
 # لوحة الإدارة مستودع مستقل — مش جزء من ريبو موقع الموظفين
 /Al-Rahma-Job-Admin
+
+.vercel
+.env*

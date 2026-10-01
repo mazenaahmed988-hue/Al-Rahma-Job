@@ -1,0 +1,28 @@
+# الاعتماديات والبناء — Vercel بيبنيهم بنفسه
+node_modules
+.next
+out
+build
+
+# لوحة الإدارة مستودع مستقل — مش جزء من موقع الموظفين
+Al-Rahma-Job-Admin
+
+# ملفات البيئة (المفاتيح تتضاف من إعدادات Vercel)
+.env
+.env.local
+.env.*.local
+
+# سكربتات QA والتشخيص — فيها بيانات اعتماد
+qa-*.mjs
+probe-*.mjs
+admin-*.mjs
+qa-*.png
+set-vercel-env.mjs
+
+# لقطات وميديا مؤقتة
+*.log
+final-login.png
+Gemini_Generated_Image_*.jpg
+supabase/.temp
+.vscode
+.vercel
