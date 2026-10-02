@@ -41,9 +41,9 @@ function LoginScreen({ onLogin }) {
       // لأن supabase.functions.invoke مش بيرجّع جسم الخطأ.
       let response, body = null;
       try {
-        response = await fetch(`${supabaseUrl}/functions/v1/employee-lookup`, {
+        response = await fetch('/api/employee-lookup', {
           method: 'POST',
-          headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nationalId }),
         });
         body = await response.json().catch(() => null);
@@ -76,9 +76,9 @@ function MyMessages({ nationalId }) {
     (async () => {
       if (!supabase) { if (active) setState({ loading: false, messages: [], error: '' }); return; }
       try {
-        const response = await fetch(`${supabaseUrl}/functions/v1/employee-messages`, {
+        const response = await fetch('/api/employee-messages', {
           method: 'POST',
-          headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nationalId }),
         });
         const payload = await response.json().catch(() => null);
@@ -105,7 +105,7 @@ function MyMessages({ nationalId }) {
 
 function ContactModal({ onClose, nationalId }) {
   const [body, setBody] = useState(''); const [sent, setSent] = useState(false); const [sending, setSending] = useState(false); const [tab, setTab] = useState('new');
-  async function send(event) { event.preventDefault(); if (!body.trim()) return; setSending(true); if (supabase) await supabase.from('messages').insert({ national_id: nationalId, message_type: 'استفسار', body }); setSent(true); setSending(false); setBody(''); }
+  async function send(event) { event.preventDefault(); if (!body.trim()) return; setSending(true); if (supabase) { const response = await fetch('/api/employee-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId, message: body, messageType: 'استفسار' }) }); setSent(response.ok); } setSending(false); setBody(''); }
   return <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}><motion.div className="preview-modal glass-card contact-modal" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onClick={(event) => event.stopPropagation()}><div className="modal-header"><div><span className="section-kicker">التواصل</span><h2>رسائلي</h2></div><button className="close-button" onClick={onClose}><X size={18} /></button></div>
     <div className="contact-tabs"><button className={tab === 'new' ? 'is-active' : ''} onClick={() => setTab('new')}>رسالة جديدة</button><button className={tab === 'history' ? 'is-active' : ''} onClick={() => setTab('history')}>رسائلي السابقة</button></div>
     {tab === 'history' ? <MyMessages nationalId={nationalId} /> : (sent ? <div className="success-message"><ShieldCheck size={32} /><strong>تم إرسال رسالتك</strong><span>سيراجعها فريق الموارد البشرية قريبًا.</span><button className="ghost-link" onClick={() => setTab('history')}>شوف رسائلي السابقة</button></div> : <form onSubmit={send}><label htmlFor="message">الرسالة</label><textarea id="message" value={body} onChange={(event) => setBody(event.target.value)} placeholder="اكتب استفسارك أو شكواك هنا..." rows="5" /><button className="primary-button full-button" disabled={sending}><Send size={17} /> {sending ? 'جارٍ الإرسال...' : 'إرسال الرسالة'}</button></form>)}
@@ -114,10 +114,10 @@ function ContactModal({ onClose, nationalId }) {
 
 function Dashboard({ data, onLogout }) {
   const [contact, setContact] = useState(false); const [notifications, setNotifications] = useState(false); const [hasUnread, setHasUnread] = useState(true); const [showConfetti, setShowConfetti] = useState(false); const [replies, setReplies] = useState([]);
-  useEffect(() => { let active = true; (async () => { if (!supabase) return; try { const response = await fetch(`${supabaseUrl}/functions/v1/employee-messages`, { method: 'POST', headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${supabaseAnonKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); if (active && response.ok) setReplies((payload.messages || []).filter((m) => m.admin_reply)); } catch {} })(); return () => { active = false; }; }, [data.national_id]);
+  useEffect(() => { let active = true; (async () => { if (!supabase) return; try { const response = await fetch('/api/employee-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); if (active && response.ok) setReplies((payload.messages || []).filter((m) => m.admin_reply)); } catch {} })(); return () => { active = false; }; }, [data.national_id]);
   useEffect(() => { const currentKey = `alrahma-current-file-${new Date().getFullYear()}-${new Date().getMonth() + 1}`; if (!window.localStorage.getItem(currentKey)) { window.localStorage.setItem(currentKey, 'seen'); setShowConfetti(true); window.setTimeout(() => setShowConfetti(false), 1000); } }, []);
   const name = data.full_name || data.name;
-  async function getFileUrl(file) { if (file.url) return file.url; if (supabase && file.storage_path) { const { data: signed } = await supabase.storage.from('payslips').createSignedUrl(file.storage_path, 120); return signed?.signedUrl; } return ''; }
+  async function getFileUrl(file) { if (file.url) return file.url; if (file.storage_path) { try { const response = await fetch('/api/file-url', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: file.id, nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); return response.ok ? (payload?.url ?? '') : ''; } catch { return ''; } } return ''; }
   async function download(file) { const url = await getFileUrl(file); if (url) { const link = document.createElement('a'); link.href = url; link.download = file.file_name || `${file.category}-${file.month_label}-${file.year}`; link.target = '_blank'; link.rel = 'noopener'; document.body.appendChild(link); link.click(); link.remove(); } }
   async function whatsapp(file) { const url = await getFileUrl(file); const text = url ? `ملف ${file.category} - ${file.month_label} ${file.year}\n${url}` : `ملف ${file.category} - ${file.month_label} ${file.year}`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer'); }
   return <main className="dashboard-page">{showConfetti && <ConfettiPop />}<header className="topbar"><Logo compact /><div className="topbar-actions"><button className="notification-button" aria-label="الإشعارات" onClick={() => { setNotifications(!notifications); setHasUnread(false); }}><Bell size={22} />{(hasUnread || replies.length > 0) && <i />}</button><motion.button whileHover={{ scale: 1.04, x: -2 }} whileTap={{ scale: .96 }} className="logout-button" onClick={onLogout}><LogOut size={17} /><span>خروج</span></motion.button></div></header>{notifications && <div className="notification-popover glass-card"><strong>الإشعارات</strong>{replies.length ? replies.slice(0, 3).map((message) => <div key={message.id} className="notif-item"><span className="notif-title">رد جديد من إدارة الموارد البشرية</span><span className="notif-body">{message.admin_reply}</span><small>{formatDate(message.replied_at)}</small></div>) : <span>تم تحديث ملفاتك المتاحة</span>}<small>{replies.length ? `${replies.length} رد على رسائلك` : 'منذ يومين'}</small><button onClick={() => { setHasUnread(false); setNotifications(false); setContact(true); }}>عرض رسائلي</button></div>}<div className="dashboard-content"><motion.div className="dashboard-intro" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}><div><h1>أهلاً بك، {name}</h1><p>ملفاتك وبياناتك في مكان واحد.</p></div></motion.div><motion.div className="cards-stack" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12 }}><EmployeeCard data={data} /><FilesSection data={data} onDownload={download} onWhatsApp={whatsapp} /></motion.div><motion.button whileHover={{ y: -3 }} whileTap={{ scale: .98 }} className="help-strip" onClick={() => setContact(true)}><div className="help-icon"><Phone size={18} /></div><div><strong>تواصل معنا</strong><span>استفسار أو شكوى</span></div><ChevronLeft size={19} /></motion.button></div><footer className="dashboard-footer"><span>© ٢٠٢٦ الرحمة المهداة للتوظيف</span><span><ShieldCheck size={13} /> خصوصيتك أولويتنا</span></footer><AnimatePresence>{contact && <ContactModal nationalId={data.national_id} onClose={() => setContact(false)} />}</AnimatePresence></main>;
