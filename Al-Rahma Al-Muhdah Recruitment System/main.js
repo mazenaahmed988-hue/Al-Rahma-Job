@@ -263,7 +263,7 @@ function setEngineStatus(next) {
 
 /** بنتحقق إن المسار محلي مطلق، موجود فعلاً، ومن نوع مسموح */
 function resolveLocalPath(raw) {
-  const input = String(raw ?? '').trim().replace(/^["']|["']$/g, '');
+  const input = String(raw ?? '').replace(/["']/g, '').trim();
   if (!input) throw new Error('المسار فاضي');
   if (!path.isAbsolute(input)) throw new Error('المسار لازم يكون كامل، مثل: K:\\HR\\Ahmed.pdf');
   const resolved = path.resolve(input);
@@ -359,10 +359,11 @@ async function processRequest(request) {
 
     // لو الطلب مربوط بصف ملف، نحدّثه كمان عشان تظهر للموظف على الموقع فوراً
     if (request.payslip_id) {
-      await adminClient()
+      const { error: payslipError } = await adminClient()
         .from('payslips')
-        .update({ storage_path: storagePath, status: 'available', is_visible: true, local_path: file.resolved })
+        .update({ storage_path: storagePath, status: 'available', is_visible: true, local_path: file.resolved, file_name: file.name, mime_type: file.ext === '.pdf' ? 'application/pdf' : `image/${file.ext.slice(1)}` })
         .eq('id', request.payslip_id);
+      if (payslipError) throw new Error(`فشل تحديث ظهور الملف: ${payslipError.message}`);
     }
 
     engineLog('ok', `تم التسليم — ${label} بقى متاح للموظف على الموقع`);
@@ -411,9 +412,12 @@ function startEngine() {
     channel = db
       .channel('agent-queue')
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'file_requests' },
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'file_requests', filter: 'status=eq.pending' },
         (payload) => {
+          // أي تغيير من لوحة الإدارة ينعكس على الإحصائيات فوراً، بدون Refresh.
+          emit('engine:refresh-stats', { event: payload.eventType, id: payload.new?.id ?? payload.old?.id });
+          if (payload.eventType !== 'INSERT') return;
           const request = payload.new;
           if (!request || request.status !== 'pending') return;
           if (inFlight.has(request.id)) return;
@@ -422,7 +426,7 @@ function startEngine() {
         },
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') engineLog('ok', 'اشتراك Realtime شغال — الطلبات بتيجي لحظياً');
+        if (status === 'SUBSCRIBED') engineLog('ok', 'اشتراك Realtime شغال — الطلبات والإحصائيات بتتحدث لحظياً');
         else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') engineLog('warn', 'Realtime مش متأكد، هنكمل بالاستعلام الدوري');
       });
   } catch (err) {
