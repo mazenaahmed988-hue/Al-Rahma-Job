@@ -36,14 +36,20 @@ export async function POST(request) {
     const body = await request.json();
     nationalId = String(body?.nationalId ?? '').trim();
   } catch {
-    return NextResponse.json({ error: 'BAD_REQUEST' }, { status: 400 });
+    return NextResponse.json({ error: 'BAD_REQUEST', message: 'الطلب غير صالح.' }, { status: 400 });
   }
 
   if (!/^\d{14}$/.test(nationalId)) {
-    return NextResponse.json({ error: 'INVALID_ID' }, { status: 400 });
+    return NextResponse.json({ error: 'INVALID_ID', message: 'الرقم القومي لازم يكون 14 رقم.' }, { status: 400 });
   }
 
-  const db = admin();
+  let db;
+  try {
+    db = admin();
+  } catch (error) {
+    console.error('employee-lookup configuration error:', error);
+    return NextResponse.json({ error: 'SERVER_CONFIG', message: 'حصل خطأ في إعدادات السيرفر. جرّب كمان شوية.' }, { status: 500 });
+  }
 
   const { data: employee, error: empError } = await db
     .from('employees')
@@ -51,8 +57,11 @@ export async function POST(request) {
     .eq('national_id', nationalId)
     .maybeSingle();
 
-  if (empError) return NextResponse.json({ error: empError.message }, { status: 500 });
-  if (!employee) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+  if (empError) {
+    console.error('employee-lookup employee query error:', empError);
+    return NextResponse.json({ error: 'DATABASE_ERROR', message: 'حصل خطأ أثناء قراءة بيانات الموظف. جرّب كمان شوية.' }, { status: 500 });
+  }
+  if (!employee) return NextResponse.json({ error: 'NOT_FOUND', message: 'الرقم القومي غير مسجل.' }, { status: 404 });
 
   // الموظف الموقوفمش بيقدردخل
   if (employee.is_active === false) {
@@ -68,7 +77,10 @@ export async function POST(request) {
     .order('year', { ascending: false })
     .order('month', { ascending: false });
 
-  if (filesError) return NextResponse.json({ error: filesError.message }, { status: 500 });
+  if (filesError) {
+    console.error('employee-lookup files query error:', filesError);
+    return NextResponse.json({ error: 'DATABASE_ERROR', message: 'تم العثور على الموظف لكن تعذر تحميل ملفاته. جرّب كمان شوية.' }, { status: 500 });
+  }
 
   const visible = (payslips ?? [])
     .filter((p) => p.status === 'available')

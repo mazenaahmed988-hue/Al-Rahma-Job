@@ -48,9 +48,18 @@ function LoginScreen({ onLogin }) {
         });
         body = await response.json().catch(() => null);
       } catch { response = null; }
-      if (response?.ok && body) onLogin(body);
-      else if (response?.status === 403 || body?.error === 'ACCOUNT_INACTIVE') setError('عذراً، حسابك غير نشط حالياً. يرجى مراجعة إدارة الموارد البشرية');
-      else setError('لم يتم العثور على موظف بهذا الرقم.');
+      if (response?.ok && body?.id && body?.national_id) {
+        onLogin({
+          ...body,
+          full_name: body.full_name ?? '',
+          job_title: body.job_title ?? '',
+          payslips: Array.isArray(body.payslips) ? body.payslips : [],
+        });
+      } else if (!response) setError('مفيش اتصال بالسيرفر. اتأكد من الإنترنت وجرب تاني.');
+      else if (response.status === 400 || body?.error === 'INVALID_ID') setError(body?.message || 'الرقم القومي لازم يكون 14 رقم.');
+      else if (response.status === 403 || body?.error === 'ACCOUNT_INACTIVE') setError('عذراً، حسابك غير نشط حالياً. يرجى مراجعة إدارة الموارد البشرية');
+      else if (response.status === 404 || body?.error === 'NOT_FOUND') setError(body?.message || 'الرقم القومي غير مسجل.');
+      else setError(body?.message || 'حصل خطأ في السيرفر. جرّب كمان شوية.');
     } else onLogin({ ...demoEmployee, national_id: nationalId });
     setLoading(false);
   }
@@ -157,9 +166,19 @@ export default function Home() {
   }, [loggedIn]);
 
   function login(employeeData) {
-    setData(employeeData);
+    const safeEmployee = {
+      ...employeeData,
+      full_name: employeeData?.full_name ?? '',
+      job_title: employeeData?.job_title ?? '',
+      payslips: Array.isArray(employeeData?.payslips) ? employeeData.payslips : [],
+    };
+    setData(safeEmployee);
     setLoggedIn(true);
-    window.localStorage.setItem('alrahma-employee-session', JSON.stringify({ employee: employeeData, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+    try {
+      window.localStorage.setItem('alrahma-employee-session', JSON.stringify({ employee: safeEmployee, expiresAt: Date.now() + 24 * 60 * 60 * 1000 }));
+    } catch {
+      // localStorage ممكن يكون مقفول في وضع الخصوصية؛ الجلسة تفضل شغالة للصفحة الحالية.
+    }
   }
   function logout() { window.localStorage.removeItem('alrahma-employee-session'); setLoggedIn(false); }
   return loggedIn ? <Dashboard data={data} onLogout={logout} /> : <LoginScreen onLogin={login} />;
