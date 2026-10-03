@@ -1,0 +1,548 @@
+/* ==============================================================
+   Al-Rahma Al-Muhdah Recruitment System - Local Agent
+   Design system: light glassmorphism (off-white) + white and gold
+   No dark colors - every color is warm or light neutral
+   ============================================================== */
+
+:root {
+  /* --- Base (light warm) --- */
+  --bg-base: #FBF8F1;
+  --bg-deep: #F5EFE2;
+  --bg-veil: rgba(255, 255, 255, 0.62);
+
+  /* --- Gold (primary) --- */
+  --gold-900: #7A5518;
+  --gold-800: #96681F;
+  --gold-700: #B8862B;
+  --gold-600: #D4A24C;
+  --gold-500: #E0B354;
+  --gold-400: #EDC87C;
+  --gold-300: #F5DDA8;
+  --gold-200: #FAEDD0;
+  --gold-100: #FDF8EC;
+
+  /* --- Text --- */
+  --ink-900: #2E2314;
+  --ink-800: #453621;
+  --ink-700: #6B573A;
+  --ink-600: #8A7454;
+  --ink-500: #A99274;
+
+  /* --- Borders and surfaces --- */
+  --line: rgba(184, 134, 43, 0.22);
+  --line-soft: rgba(184, 134, 43, 0.12);
+  --glass: rgba(255, 255, 255, 0.66);
+  --glass-strong: rgba(255, 255, 255, 0.84);
+
+  /* --- States (all warm - no cold red/green) --- */
+  --ok: #4F8A4A;
+  --ok-soft: #EAF5E8;
+  --warn: #C08A2E;
+  --warn-soft: #FDF3E0;
+  --err: #B5563E;
+  --err-soft: #FBEDE9;
+
+  /* --- Shadows --- */
+  --shadow-sm: 0 2px 10px rgba(122, 85, 24, 0.07);
+  --shadow-md: 0 10px 30px rgba(122, 85, 24, 0.11);
+  --shadow-lg: 0 22px 60px rgba(122, 85, 24, 0.16);
+
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+
+  /* --- Font stack tuned for Arabic tashkeel (marks must not clip) --- */
+  --font: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+  --font-tashkeel: 'Traditional Arabic', 'Amiri', 'Scheherazade New', 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font);
+  color: var(--ink-900);
+  /* --- Mica: soft translucent textured backdrop --- */
+  background:
+    radial-gradient(120% 90% at 85% -10%, rgba(255, 255, 255, .92) 0%, rgba(255, 255, 255, 0) 60%),
+    radial-gradient(110% 80% at 10% 110%, rgba(250, 237, 208, .85) 0%, rgba(250, 237, 208, 0) 62%),
+    linear-gradient(160deg, #FDFBF6 0%, #F7F1E4 48%, #F3EADA 100%);
+  overflow: hidden;
+  /* Text selection disabled so it feels like an app, not a web page */
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { display: flex; flex-direction: column; }
+
+/* --- Mica layer: blurs what sits behind it elegantly (Acrylic/Mica) --- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.34);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+}
+
+/* ==============================================================
+   Soft glowing background blobs (ambient) - warm, never cold
+   ============================================================== */
+.ambient {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+.ambient--one {
+  width: 420px; height: 420px;
+  top: -140px; right: -110px;
+  background: rgba(224, 179, 84, 0.30);
+}
+.ambient--two {
+  width: 380px; height: 380px;
+  bottom: -130px; left: -120px;
+  background: rgba(245, 221, 168, 0.42);
+}
+.ambient--three {
+  width: 300px; height: 300px;
+  top: 45%; left: 42%;
+  background: rgba(255, 255, 255, 0.55);
+  filter: blur(80px);
+}
+
+/* ==============================================================
+   Custom titlebar (native frame removed)
+   ============================================================== */
+.titlebar {
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0 16px;
+  /* Mica: the titlebar is part of the glass surface */
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+  -webkit-app-region: drag;
+  position: relative;
+  z-index: 10;
+}
+
+.titlebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-700);
+  letter-spacing: 0.2px;
+}
+.titlebar__brand img { width: 22px; height: 22px; object-fit: contain; border-radius: 6px; }
+
+.titlebar__controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+.titlebar__btn {
+  width: 46px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--ink-700);
+  transition: background 0.16s ease, color 0.16s ease;
+}
+.titlebar__btn:hover { background: var(--gold-200); color: var(--ink-900); }
+.titlebar__btn--close:hover { background: #C25B41; color: #fff; }
+.titlebar__btn svg { width: 15px; height: 15px; }
+
+/* ==============================================================
+   Glass surface - the core translucent panel
+   ============================================================== */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==============================================================
+   Ambient blobs
+   ============================================================== */
+.auth {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.auth__card {
+  width: min(400px, 100%);
+  padding: 26px 30px 24px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  animation: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.auth__logo {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+  margin: 0 auto 10px;
+  display: block;
+  border-radius: 20px;
+  padding: 6px;
+  background: var(--glass-strong);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth__title {
+  font-family: var(--font-tashkeel);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin-bottom: 4px;
+  line-height: 1.85;
+  letter-spacing: 0;
+}
+
+.auth__subtitle {
+  font-size: 13.5px;
+  color: var(--ink-600);
+  margin-bottom: 28px;
+  line-height: 1.7;
+}
+
+.auth__form { display: flex; flex-direction: column; gap: 15px; }
+
+.field { text-align: right; }
+
+.field__label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-700);
+  margin-bottom: 7px;
+}
+
+.field__wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 15px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1.5px solid var(--line);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.field__wrap:focus-within {
+  border-color: var(--gold-600);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(224, 179, 84, 0.16);
+}
+
+.field__wrap svg { width: 18px; height: 18px; color: var(--ink-500); flex: none; }
+
+.field__input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink-900);
+  outline: none;
+  user-select: text;
+}
+.field__input::placeholder { color: var(--ink-500); }
+.field__input--ltr { direction: ltr; text-align: left; }
+
+.field__toggle {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--ink-500);
+  padding: 4px;
+  display: grid;
+  place-items: center;
+}
+.field__toggle:hover { color: var(--gold-700); }
+.field__toggle svg { width: 17px; height: 17px; }
+
+/* --- Buttons --- */
+.btn {
+  height: 50px;
+  border: 0;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition: transform 0.16s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.btn svg { width: 18px; height: 18px; }
+
+.btn--primary {
+  background: linear-gradient(135deg, var(--gold-500), var(--gold-700));
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(184, 134, 43, 0.34);
+  margin-top: 6px;
+}
+.btn--primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(184, 134, 43, 0.42); }
+.btn--primary:active:not(:disabled) { transform: translateY(0); }
+.btn--primary:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+.btn--ghost {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px solid var(--line);
+  color: var(--ink-800);
+}
+.btn--ghost:hover:not(:disabled) { background: #fff; border-color: var(--gold-400); transform: translateY(-2px); }
+.btn--ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- Messages --- */
+.alert {
+  padding: 12px 15px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.7;
+  text-align: right;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  animation: rise 0.3s ease both;
+}
+.alert svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
+.alert--error { background: var(--err-soft); border: 1px solid rgba(181, 86, 62, 0.3); color: var(--err); }
+.alert--ok { background: var(--ok-soft); border: 1px solid rgba(79, 138, 74, 0.28); color: var(--ok); }
+.alert--info { background: var(--gold-100); border: 1px solid var(--line); color: var(--gold-800); }
+
+.auth__foot {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 11.5px;
+  color: var(--ink-500);
+  line-height: 1.8;
+}
+
+/* ==============================================================
+   Dashboard layout
+   ============================================================== */
+.dash {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 24px;
+  overflow: hidden;
+}
+
+
+/* --- Card grid --- */
+.cards {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* ==============================================================
+   Hero - breathing logo (connection indicator without any text)
+   ============================================================== */
+.hero {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 0 12px;
+}
+
+.hero__glow {
+  position: relative;
+  width: 124px;
+  height: 124px;
+  display: grid;
+  place-items: center;
+}
+
+/* Two soft halo rings that expand and fade - the "breathing" effect */
+.hero__halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s ease;
+}
+
+.hero__logo {
+  position: relative;
+  z-index: 2;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  border-radius: 50%;
+  box-shadow: 0 8px 22px -10px rgba(122, 85, 24, 0.40);
+  transition: filter 0.7s ease, opacity 0.7s ease;
+}
+
+/* --- State: connected (gold breathing glow) --- */
+.hero__glow--on .hero__halo {
+  background: radial-gradient(circle, rgba(212, 162, 76, 0.55) 0%, rgba(224, 179, 84, 0.22) 45%, rgba(224, 179, 84, 0) 72%);
+  animation: breathe 3.2s ease-in-out infinite;
+}
+.hero__glow--on .hero__halo--two {
+  animation: breathe 3.2s ease-in-out infinite;
+  animation-delay: 1.6s;
+}
+.hero__glow--on .hero__logo {
+  filter: saturate(1.08) brightness(1.03);
+  animation: logoPulse 3.2s ease-in-out infinite;
+}
+/* نبضة خفيفة على اللوجو نفسه مع الهالة */
+@keyframes logoPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.045); }
+}
+
+@keyframes breathe {
+  0%   { transform: scale(0.74); opacity: 0.34; }
+  50%  { transform: scale(1.10); opacity: 0.92; }
+  100% { transform: scale(0.74); opacity: 0.34; }
+}
+
+/* --- State: offline (pale grey, no breathing) --- */
+.hero__glow--off .hero__logo {
+  filter: grayscale(1) brightness(1.22) contrast(0.72);
+  opacity: 0.42;
+  box-shadow: none;
+}
+.hero__glow--off .hero__halo { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__glow--on .hero__halo { animation: none; opacity: 0.45; transform: scale(1); }
+}
+
+.hero__title {
+  /* التشكيل بيحتاج مساحة فوق وتحت الحروف عشان ما يتقطعش */
+  font-family: var(--font-tashkeel);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-900);
+  text-align: center;
+  line-height: 1.85;
+  letter-spacing: 0;
+}
+
+/* --- Card icon accents --- */
+.card__icon--pending { background: var(--gold-200); color: var(--gold-800); }
+.card__icon--done    { background: var(--ok-soft);    color: var(--ok); }
+.card__icon--failed  { background: var(--err-soft);   color: var(--err); }
+
+/* --- Footer buttons (refresh / logout) --- */
+.dash__foot {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 0 16px;
+}
+
+.ghost-btn {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.18s ease, color 0.18s ease;
+}
+.ghost-btn svg { width: 15px; height: 15px; }
+.ghost-btn:hover {
+  background: var(--gold-200);
+  color: var(--ink-900);
+  transform: translateY(-2px);
+}
+.ghost-btn--spin svg { animation: spinOnce 0.6s ease; }
+@keyframes spinOnce { to { transform: rotate(360deg); } }
+
+.card {
+  padding: 15px 16px;
+  border-radius: var(--radius-md);
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.card:nth-child(1) { animation-delay: 0.04s; }
+.card:nth-child(2) { animation-delay: 0.09s; }
+.card:nth-child(3) { animation-delay: 0.14s; }
+.card:nth-child(4) { animation-delay: 0.19s; }
+
+.card__top { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+
+.card__icon {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--gold-200);
+  color: var(--gold-800);
+}
+.card__icon svg { width: 17px; height: 17px; }
+
+.card__title { font-size: 12px; font-weight: 600; color: var(--ink-600); }
+
+.card__value {
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--ink-900);
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+}
+.card__hint {
+  font-size: 11px;
+  color: var(--ink-500);
+  margin-top: 5px;
+  line-height: 1.6;
+}
+
+
+

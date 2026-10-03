@@ -1,0 +1,71 @@
+{
+  "name": "al-rahma-al-muhdah-recruitment-system",
+  "productName": "منظومة الرحمة المهداة للتوظيف",
+  "version": "1.0.0",
+  "description": "منظومة الرحمة المهداة للتوظيف — برنامج استلام وتسليم ملفات الموظفين",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "icon": "powershell -ExecutionPolicy Bypass -File tools/make-icon.ps1",
+    "dist": "electron-builder --win --x64",
+    "pack": "electron-builder --win dir",
+    "dist:app": "electron-builder --win --x64 --dir",
+    "sign:all": "node tools/sign-installer.js",
+    "dist:installer": "electron-builder --prepackaged dist/win-unpacked --win nsis --x64",
+    "dist:all": "npm run dist:app && npm run sign:all && npm run dist:installer && npm run sign:all"
+  },
+  "author": "Al-Rahma Al-Muhdah",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.alrahmamuhdah.recruitment",
+    "productName": "منظومة الرحمة المهداة للتوظيف",
+    "copyright": "© 2026 الرحمة المهداة للتوظيف",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "logo.jpg",
+      "build/icon.ico",
+      ".env.local",
+      "package.json",
+      "!**/*.map",
+      "!**/qa/**",
+      "!**/tools/**",
+      "!**/*.md",
+      "!**/node_modules/*/{test,__tests__,tests,example,examples}/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico",
+      "artifactName": "منظومة-الرحمة-المهداة-للتوظيف-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "منظومة الرحمة المهداة للتوظيف",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
