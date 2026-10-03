@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, BriefcaseBusiness, CalendarDays, Check, ChevronLeft, CircleUserRound, Download, FileText, FolderUp, IdCard, LogOut, Phone, Send, ShieldCheck, X } from 'lucide-react';
+import { Bell, BriefcaseBusiness, CalendarDays, Check, ChevronLeft, CircleUserRound, Download, FileText, IdCard, LogOut, Phone, Send, ShieldCheck, X } from 'lucide-react';
 import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 
 const demoEmployee = {
@@ -66,89 +66,6 @@ function EmptyFiles() { return <div className="empty-files"><img className="empt
 function FilesSection({ data, onDownload, onWhatsApp }) { const files = data.payslips || []; const years = [...new Set(files.map((file) => file.year))].sort((a, b) => b - a); const categories = [...new Set(files.map((file) => file.category))]; const [year, setYear] = useState(years[0] || new Date().getFullYear()); const [category, setCategory] = useState(categories[0] || 'مفردات مرتب'); const [loading, setLoading] = useState(true); useEffect(() => { const timer = window.setTimeout(() => setLoading(false), 650); return () => window.clearTimeout(timer); }, [year, category]); const visibleFiles = files.filter((file) => file.year === year && file.category === category).sort((a, b) => a.month - b.month); const hasAnyFiles = files.length > 0; return <GlassCard className="payslip-card files-section"><div className="section-title"><div><span className="section-kicker">المستندات</span><h2>ملفاتي</h2></div><span className="count-pill">{visibleFiles.length} شهر</span></div>{hasAnyFiles && <div className="filter-row"><div className="filter-group"><span>السنة</span><select value={year} onChange={(event) => setYear(Number(event.target.value))}>{years.map((item) => <option key={item}>{item}</option>)}</select></div><div className="category-tabs">{categories.map((item) => <motion.button whileTap={{ scale: .94 }} whileHover={{ y: -2 }} key={item} className={category === item ? 'is-active' : ''} onClick={() => setCategory(item)}>{item}</motion.button>)}</div></div>}{loading ? <ShimmerSkeleton /> : <motion.div className="files-list" initial="hidden" animate="show" variants={{ hidden: {}, show: { transition: { staggerChildren: .1 }}}}>{visibleFiles.length ? visibleFiles.map((file) => <motion.div key={file.id} variants={{ hidden: { opacity: 0, x: 18 }, show: { opacity: 1, x: 0, transition: { duration: .35 }}}}><FileCard file={file} onDownload={onDownload} onWhatsApp={onWhatsApp} /></motion.div>) : <EmptyFiles />}</motion.div>}</GlassCard>; }
 
 
-const MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-
-function UploadRequestModal({ nationalId, onClose }) {
-  const now = new Date();
-  const [localPath, setLocalPath] = useState('');
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [category, setCategory] = useState('مفردات مرتب');
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState('');
-  const [done, setDone] = useState('');
-  const [rows, setRows] = useState([]);
-
-  // حالة طلباتي — بتتحدّث كل 5 ثواني لحد ما الطلب يوصل "اتسلّم"
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      try {
-        const response = await fetch(`/api/file-request?nationalId=${encodeURIComponent(nationalId)}`);
-        const payload = await response.json().catch(() => null);
-        if (active && response.ok) setRows(payload.rows || []);
-      } catch { /* نتجاهل ونجرب تاني */ }
-    }
-    load();
-    const timer = window.setInterval(load, 5000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [nationalId]);
-
-  async function submit(event) {
-    event.preventDefault();
-    setError('');
-    setDone('');
-    setSending(true);
-    try {
-      const response = await fetch('/api/file-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nationalId, localPath, year, month, category }),
-      });
-      const payload = await response.json().catch(() => null);
-      if (response.ok) {
-        setDone(payload.message || 'استلمنا طلبك');
-        setLocalPath('');
-      } else setError(payload?.message || 'مقدرناش نبعت الطلب. جرّب تاني.');
-    } catch {
-      setError('مفيش اتصال بالسيرفر دلوقتي.');
-    }
-    setSending(false);
-  }
-
-  const label = (row) => `${row.category} — ${MONTHS_AR[(row.month || 1) - 1]} ${row.year}`;
-  const stateText = { pending: 'في الانتظار', processing: 'بيرفع دلوقتي', completed: 'اتسلّم ✅', failed: 'فشل' };
-
-  return <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-    <motion.div className="preview-modal glass-card upload-modal" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onClick={(event) => event.stopPropagation()}>
-      <div className="modal-header">
-        <div><span className="section-kicker">من جهازك</span><h2>أرسل ملف</h2></div>
-        <button className="close-button" onClick={onClose} aria-label="إغلاق"><X size={18} /></button>
-      </div>
-      <p className="upload-hint">اكتب المسار الكامل للملف اللي على جهازك. البرنامج اللي شغال على جهازك هيلقط الطلب ويرفعه دلوقتي.</p>
-      <form onSubmit={submit}>
-        <label htmlFor="localPath">مسار الملف على جهازك</label>
-        <div className="input-wrap"><FolderUp size={19} /><input id="localPath" dir="ltr" value={localPath} onChange={(event) => setLocalPath(event.target.value)} placeholder="K:\\HR\\Ahmed.pdf" /></div>
-        <div className="upload-row">
-          <div className="filter-group"><span>الشهر</span><select value={month} onChange={(event) => setMonth(Number(event.target.value))}>{MONTHS_AR.map((item, index) => <option key={item} value={index + 1}>{item}</option>)}</select></div>
-          <div className="filter-group"><span>السنة</span><select value={year} onChange={(event) => setYear(Number(event.target.value))}>{[now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2].map((item) => <option key={item} value={item}>{item}</option>)}</select></div>
-          <div className="filter-group"><span>النوع</span><select value={category} onChange={(event) => setCategory(event.target.value)}><option>مفردات مرتب</option><option>حوافز</option><option>مستحقات</option></select></div>
-        </div>
-        <button className="primary-button full-button" type="submit" disabled={sending}>{sending ? 'جارٍ الإرسال...' : <><FolderUp size={17} /> ابعت الطلب</>}</button>
-        {done && <p className="upload-success"><Check size={14} /> {done}</p>}
-        {error && <p className="form-error">{error}</p>}
-      </form>
-      {rows.length > 0 && <div className="upload-history">
-        <strong>طلباتي السابقة</strong>
-        {rows.map((row) => <div key={row.id} className={`upload-history__row upload-history__row--${row.status}`}>
-          <span>{label(row)}</span>
-          <span className="upload-history__state">{stateText[row.status] ?? row.status}</span>
-        </div>)}
-      </div>}
-    </motion.div>
-  </motion.div>;
-}
-
 function formatDate(value) { if (!value) return ''; return new Date(value).toLocaleString('ar-EG', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
 
 function MyMessages({ nationalId }) {
@@ -196,14 +113,14 @@ function ContactModal({ onClose, nationalId }) {
 }
 
 function Dashboard({ data, onLogout }) {
-  const [contact, setContact] = useState(false); const [notifications, setNotifications] = useState(false); const [hasUnread, setHasUnread] = useState(true); const [showConfetti, setShowConfetti] = useState(false); const [replies, setReplies] = useState([]); const [upload, setUpload] = useState(false);
+  const [contact, setContact] = useState(false); const [notifications, setNotifications] = useState(false); const [hasUnread, setHasUnread] = useState(true); const [showConfetti, setShowConfetti] = useState(false); const [replies, setReplies] = useState([]);
   useEffect(() => { let active = true; (async () => { if (!supabase) return; try { const response = await fetch('/api/employee-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); if (active && response.ok) setReplies((payload.messages || []).filter((m) => m.admin_reply)); } catch {} })(); return () => { active = false; }; }, [data.national_id]);
   useEffect(() => { const currentKey = `alrahma-current-file-${new Date().getFullYear()}-${new Date().getMonth() + 1}`; if (!window.localStorage.getItem(currentKey)) { window.localStorage.setItem(currentKey, 'seen'); setShowConfetti(true); window.setTimeout(() => setShowConfetti(false), 1000); } }, []);
   const name = data.full_name || data.name;
   async function getFileUrl(file) { if (file.url) return file.url; if (file.storage_path) { try { const response = await fetch('/api/file-url', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: file.id, nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); return response.ok ? (payload?.url ?? '') : ''; } catch { return ''; } } return ''; }
   async function download(file) { const url = await getFileUrl(file); if (url) { const link = document.createElement('a'); link.href = url; link.download = file.file_name || `${file.category}-${file.month_label}-${file.year}`; link.target = '_blank'; link.rel = 'noopener'; document.body.appendChild(link); link.click(); link.remove(); } }
   async function whatsapp(file) { const url = await getFileUrl(file); const text = url ? `ملف ${file.category} - ${file.month_label} ${file.year}\n${url}` : `ملف ${file.category} - ${file.month_label} ${file.year}`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer'); }
-  return <main className="dashboard-page">{showConfetti && <ConfettiPop />}<header className="topbar"><Logo compact /><div className="topbar-actions"><button className="notification-button" aria-label="الإشعارات" onClick={() => { setNotifications(!notifications); setHasUnread(false); }}><Bell size={22} />{(hasUnread || replies.length > 0) && <i />}</button><motion.button whileHover={{ scale: 1.04, x: -2 }} whileTap={{ scale: .96 }} className="logout-button" onClick={onLogout}><LogOut size={17} /><span>خروج</span></motion.button></div></header>{notifications && <div className="notification-popover glass-card"><strong>الإشعارات</strong>{replies.length ? replies.slice(0, 3).map((message) => <div key={message.id} className="notif-item"><span className="notif-title">رد جديد من إدارة الموارد البشرية</span><span className="notif-body">{message.admin_reply}</span><small>{formatDate(message.replied_at)}</small></div>) : <span>تم تحديث ملفاتك المتاحة</span>}<small>{replies.length ? `${replies.length} رد على رسائلك` : 'منذ يومين'}</small><button onClick={() => { setHasUnread(false); setNotifications(false); setContact(true); }}>عرض رسائلي</button></div>}<div className="dashboard-content"><motion.div className="dashboard-intro" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}><div><h1>أهلاً بك، {name}</h1><p>ملفاتك وبياناتك في مكان واحد.</p></div></motion.div><motion.div className="cards-stack" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12 }}><EmployeeCard data={data} /><FilesSection data={data} onDownload={download} onWhatsApp={whatsapp} /></motion.div><motion.button whileHover={{ y: -3 }} whileTap={{ scale: .98 }} className="help-strip" onClick={() => setUpload(true)}><div className="help-icon"><FolderUp size={18} /></div><div><strong>أرسل ملف من جهازك</strong><span>البرنامج بيوصّله للسحابة</span></div><ChevronLeft size={19} /></motion.button><motion.button whileHover={{ y: -3 }} whileTap={{ scale: .98 }} className="help-strip" onClick={() => setContact(true)}><div className="help-icon"><Phone size={18} /></div><div><strong>تواصل معنا</strong><span>استفسار أو شكوى</span></div><ChevronLeft size={19} /></motion.button></div><footer className="dashboard-footer"><span>© ٢٠٢٦ الرحمة المهداة للتوظيف</span><span><ShieldCheck size={13} /> خصوصيتك أولويتنا</span></footer><AnimatePresence>{upload && <UploadRequestModal nationalId={data.national_id} onClose={() => setUpload(false)} />}</AnimatePresence><AnimatePresence>{contact && <ContactModal nationalId={data.national_id} onClose={() => setContact(false)} />}</AnimatePresence></main>;
+  return <main className="dashboard-page">{showConfetti && <ConfettiPop />}<header className="topbar"><Logo compact /><div className="topbar-actions"><button className="notification-button" aria-label="الإشعارات" onClick={() => { setNotifications(!notifications); setHasUnread(false); }}><Bell size={22} />{(hasUnread || replies.length > 0) && <i />}</button><motion.button whileHover={{ scale: 1.04, x: -2 }} whileTap={{ scale: .96 }} className="logout-button" onClick={onLogout}><LogOut size={17} /><span>خروج</span></motion.button></div></header>{notifications && <div className="notification-popover glass-card"><strong>الإشعارات</strong>{replies.length ? replies.slice(0, 3).map((message) => <div key={message.id} className="notif-item"><span className="notif-title">رد جديد من إدارة الموارد البشرية</span><span className="notif-body">{message.admin_reply}</span><small>{formatDate(message.replied_at)}</small></div>) : <span>تم تحديث ملفاتك المتاحة</span>}<small>{replies.length ? `${replies.length} رد على رسائلك` : 'منذ يومين'}</small><button onClick={() => { setHasUnread(false); setNotifications(false); setContact(true); }}>عرض رسائلي</button></div>}<div className="dashboard-content"><motion.div className="dashboard-intro" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}><div><h1>أهلاً بك، {name}</h1><p>ملفاتك وبياناتك في مكان واحد.</p></div></motion.div><motion.div className="cards-stack" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12 }}><EmployeeCard data={data} /><FilesSection data={data} onDownload={download} onWhatsApp={whatsapp} /></motion.div><motion.button whileHover={{ y: -3 }} whileTap={{ scale: .98 }} className="help-strip" onClick={() => setContact(true)}><div className="help-icon"><Phone size={18} /></div><div><strong>تواصل معنا</strong><span>استفسار أو شكوى</span></div><ChevronLeft size={19} /></motion.button></div><footer className="dashboard-footer"><span>© ٢٠٢٦ الرحمة المهداة للتوظيف</span><span><ShieldCheck size={13} /> خصوصيتك أولويتنا</span></footer><AnimatePresence>{contact && <ContactModal nationalId={data.national_id} onClose={() => setContact(false)} />}</AnimatePresence></main>;
 }
 
 export default function Home() {
