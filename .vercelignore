@@ -7,6 +7,9 @@ build
 # لوحة الإدارة مستودع مستقل — مش جزء من موقع الموظفين
 Al-Rahma-Job-Admin
 
+# برنامج الوكيل المحلي (Electron) — مش جزء من الموقع
+Al-Rahma Al-Muhdah Recruitment System
+
 # ملفات البيئة (المفاتيح تتضاف من إعدادات Vercel)
 .env
 .env.local

@@ -125,6 +125,10 @@ $('btn-logout').addEventListener('click', async () => {
     return;
   }
   await boot();
-  // تحديث صامت كل 20 ثانية
+
+  // الإحصائيات تتغير فوراً مع أحداث Realtime القادمة من الـ main process.
+  window.agent.onEngineRefreshStats(() => { renderStats(); });
+
+  // شبكة أمان لو انقطع Realtime مؤقتاً.
   setInterval(renderStats, 20000);
 })();

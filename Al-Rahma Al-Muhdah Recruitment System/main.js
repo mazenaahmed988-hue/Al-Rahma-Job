@@ -399,6 +399,34 @@ async function sweepQueue() {
 
 let pollTimer = null;
 let channel = null;
+let presenceChannel = null;
+
+// ── مؤشر النبض: قناة Presence بتبلّغ لوحة الإدارة إن البرنامج شغّال الآن ──
+function startPresence() {
+  try {
+    const db = adminClient();
+    presenceChannel = db
+      .channel('agent-presence')
+      .on('presence', { event: 'sync' }, () => {
+        // مفيش حاجة نعملها هنا — لوحة الإدارة هي اللي بتسمع
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try { await presenceChannel.track({ device: deviceName(), at: new Date().toISOString() }); } catch { /* ignore */ }
+          engineLog('ok', 'Presence شغّال — لوحة الإدارة شايفة إن الوكيل متصل');
+        }
+      });
+  } catch (err) {
+    engineLog('err', 'مقدرتش أفتح قناة Presence: ' + err.message);
+  }
+}
+
+function stopPresence() {
+  if (presenceChannel) {
+    try { adminClient().removeChannel(presenceChannel); } catch { /* ignore */ }
+    presenceChannel = null;
+  }
+}
 
 /** تشغيل المحرك: اشتراك Realtime + مؤقّت احتياطي يجيب أي طلب فاتته */
 function startEngine() {
@@ -436,6 +464,7 @@ function startEngine() {
   // شبكة أمان: كل 10 ثواني نشوف لو فيه طلبات فاتتنا
   pollTimer = setInterval(sweepQueue, 10000);
   sweepQueue();
+  startPresence();
 }
 
 function stopEngine(reason = 'STOPPED') {
@@ -445,6 +474,7 @@ function stopEngine(reason = 'STOPPED') {
     try { adminClient().removeChannel(channel); } catch { /* ignore */ }
     channel = null;
   }
+  stopPresence();
   engineStarted = false;
   setEngineStatus({ running: false, reason });
 }

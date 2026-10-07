@@ -5,26 +5,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, BriefcaseBusiness, CalendarDays, Check, ChevronLeft, CircleUserRound, Download, FileText, IdCard, LogOut, Phone, Send, ShieldCheck, X } from 'lucide-react';
 import { supabase, supabaseUrl, supabaseAnonKey } from '../lib/supabase';
 
-const demoEmployee = {
-  full_name: 'أحمد محمد السيد', job_title: 'أخصائي موارد بشرية', national_id: '29001011501234',
-  payslips: [
-    { id: 'jan-24', category: 'مفردات مرتب', year: 2024, month: 1, month_label: 'يناير', note: 'تمت مراجعة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'mar-24', category: 'مفردات مرتب', year: 2024, month: 3, month_label: 'مارس', note: 'تمت مراجعة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'jun-24', category: 'مفردات مرتب', year: 2024, month: 6, month_label: 'يونيو', note: 'تمت مراجعة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'sep-24', category: 'حوافز', year: 2024, month: 9, month_label: 'سبتمبر', note: 'مكافأة الأداء السنوية', status: 'available', storage_path: '', url: '' },
-    { id: 'dec-24', category: 'مفردات مرتب', year: 2024, month: 12, month_label: 'ديسمبر', note: 'تم أرشفة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'jan-25', category: 'مفردات مرتب', year: 2025, month: 1, month_label: 'يناير', note: 'تمت مراجعة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'mar-25', category: 'حوافز', year: 2025, month: 3, month_label: 'مارس', note: 'تم إضافة مكافأة', status: 'available', storage_path: '', url: '' },
-    { id: 'may-25', category: 'مفردات مرتب', year: 2025, month: 5, month_label: 'مايو', note: 'تم تحديث البيانات', status: 'available', storage_path: '', url: '' },
-    { id: 'aug-25', category: 'مفردات مرتب', year: 2025, month: 8, month_label: 'أغسطس', note: 'تمت مراجعة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'nov-25', category: 'حوافز', year: 2025, month: 11, month_label: 'نوفمبر', note: 'حافز إضافي', status: 'available', storage_path: '', url: '' },
-    { id: 'jan-26', category: 'مفردات مرتب', year: 2026, month: 1, month_label: 'يناير', note: 'الملف قيد التجهيز', status: 'pending', storage_path: '', url: '' },
-    { id: 'mar-26', category: 'مفردات مرتب', year: 2026, month: 3, month_label: 'مارس', note: 'تمت مراجعة الملف', status: 'available', storage_path: '', url: '' },
-    { id: 'jun-26', category: 'حوافز', year: 2026, month: 6, month_label: 'يونيو', note: 'مكافأة منتصف العام', status: 'available', storage_path: '', url: '' },
-    { id: 'sep-26', category: 'مفردات مرتب', year: 2026, month: 9, month_label: 'سبتمبر', note: 'آخر ملف مرفوع', status: 'available', storage_path: '', url: '' },
-  ],
-};
-
 function Logo({ compact = false }) { return <div className={`brand ${compact ? 'brand--compact' : ''}`}><img src="/assets/logo.png" alt="الرحمة المهداة للتوظيف" />{!compact && <span>بوابة الموظفين</span>}</div>; }
 function GlassCard({ children, className = '' }) { return <section className={`glass-card ${className}`}>{children}</section>; }
 
@@ -36,31 +16,28 @@ function LoginScreen({ onLogin }) {
   const [nationalId, setNationalId] = useState(''); const [error, setError] = useState(''); const [loading, setLoading] = useState(false);
   async function submit(event) {
     event.preventDefault(); setError(''); if (!/^\d{14}$/.test(nationalId)) return setError('أدخل الرقم القومي المكون من 14 رقمًا فقط.'); setLoading(true);
-    if (supabase) {
-      // بننادي الـ function مباشرة عشان نقدر نقرأ الـ status والرسالة،
-      // لأن supabase.functions.invoke مش بيرجّع جسم الخطأ.
-      let response, body = null;
-      try {
-        response = await fetch('/api/employee-lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nationalId }),
-        });
-        body = await response.json().catch(() => null);
-      } catch { response = null; }
-      if (response?.ok && body?.id && body?.national_id) {
-        onLogin({
-          ...body,
-          full_name: body.full_name ?? '',
-          job_title: body.job_title ?? '',
-          payslips: Array.isArray(body.payslips) ? body.payslips : [],
-        });
-      } else if (!response) setError('مفيش اتصال بالسيرفر. اتأكد من الإنترنت وجرب تاني.');
-      else if (response.status === 400 || body?.error === 'INVALID_ID') setError(body?.message || 'الرقم القومي لازم يكون 14 رقم.');
-      else if (response.status === 403 || body?.error === 'ACCOUNT_INACTIVE') setError('عذراً، حسابك غير نشط حالياً. يرجى مراجعة إدارة الموارد البشرية');
-      else if (response.status === 404 || body?.error === 'NOT_FOUND') setError(body?.message || 'الرقم القومي غير مسجل.');
-      else setError(body?.message || 'حصل خطأ في السيرفر. جرّب كمان شوية.');
-    } else onLogin({ ...demoEmployee, national_id: nationalId });
+    // الاتصال مباشر بـ Supabase Production — مفيش أي داتا وهمية كـ fallback.
+    let response, body = null;
+    try {
+      response = await fetch('/api/employee-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nationalId }),
+      });
+      body = await response.json().catch(() => null);
+    } catch { response = null; }
+    if (response?.ok && body?.id && body?.national_id) {
+      onLogin({
+        ...body,
+        full_name: body.full_name ?? '',
+        job_title: body.job_title ?? '',
+        payslips: Array.isArray(body.payslips) ? body.payslips : [],
+      });
+    } else if (!response) setError('مفيش اتصال بالسيرفر. اتأكد من الإنترنت وجرب تاني.');
+    else if (response.status === 400 || body?.error === 'INVALID_ID') setError(body?.message || 'الرقم القومي لازم يكون 14 رقم.');
+    else if (response.status === 403 || body?.error === 'ACCOUNT_INACTIVE') setError('عذراً، حسابك غير نشط حالياً. يرجى مراجعة إدارة الموارد البشرية');
+    else if (response.status === 404 || body?.error === 'NOT_FOUND') setError(body?.message || 'الرقم القومي غير مسجل.');
+    else setError(body?.message || 'حصل خطأ في السيرفر. جرّب كمان شوية.');
     setLoading(false);
   }
   return <main className="login-page"><motion.div className="login-wrap" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .7 }}><Logo /><GlassCard className="login-card"><div className="login-heading"><div className="icon-badge"><ShieldCheck size={21} /></div><div><h1>تسجيل الدخول</h1></div></div><form onSubmit={submit}><label htmlFor="nationalId">الرقم القومي</label><div className="input-wrap"><IdCard size={19} /><input id="nationalId" inputMode="numeric" maxLength={14} value={nationalId} onChange={(event) => setNationalId(event.target.value.replace(/\D/g, ''))} placeholder="أدخل 14 رقمًا" /></div><button className="primary-button" type="submit" disabled={loading}>{loading ? 'جارٍ التحقق...' : <>دخول <ChevronLeft size={18} /></>}</button>{error && <p className={`form-error ${error.startsWith('عذراً') ? 'form-error--blocked' : ''}`}>{error}</p>}</form><div className="secure-note"><ShieldCheck size={15} /> اتصال آمن</div></GlassCard></motion.div></main>;
@@ -82,21 +59,25 @@ function MyMessages({ nationalId }) {
 
   useEffect(() => {
     let active = true;
-    (async () => {
+    let interval;
+    const loadMessages = async () => {
       if (!supabase) { if (active) setState({ loading: false, messages: [], error: '' }); return; }
       try {
         const response = await fetch('/api/employee-messages', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nationalId }),
+          cache: 'no-store',
         });
         const payload = await response.json().catch(() => null);
         if (!active) return;
-        if (!response.ok) setState({ loading: false, messages: [], error: payload?.error || 'LOAD_FAILED' });
+        if (!response.ok) setState((previous) => ({ ...previous, loading: false, error: payload?.error || 'LOAD_FAILED' }));
         else setState({ loading: false, messages: payload.messages || [], error: '' });
-      } catch { if (active) setState({ loading: false, messages: [], error: 'NETWORK' }); }
-    })();
-    return () => { active = false; };
+      } catch { if (active) setState((previous) => ({ ...previous, loading: false, error: 'NETWORK' })); }
+    };
+    loadMessages();
+    interval = window.setInterval(loadMessages, 15000);
+    return () => { active = false; window.clearInterval(interval); };
   }, [nationalId]);
 
   if (state.loading) return <div className="messages-loading">جارٍ تحميل رسائلك...</div>;
@@ -122,19 +103,57 @@ function ContactModal({ onClose, nationalId }) {
 }
 
 function Dashboard({ data, onLogout }) {
-  const [contact, setContact] = useState(false); const [notifications, setNotifications] = useState(false); const [hasUnread, setHasUnread] = useState(true); const [showConfetti, setShowConfetti] = useState(false); const [replies, setReplies] = useState([]);
-  useEffect(() => { let active = true; (async () => { if (!supabase) return; try { const response = await fetch('/api/employee-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); if (active && response.ok) setReplies((payload.messages || []).filter((m) => m.admin_reply)); } catch {} })(); return () => { active = false; }; }, [data.national_id]);
+  const [contact, setContact] = useState(false); const [notifications, setNotifications] = useState(false); const [hasUnread, setHasUnread] = useState(false); const [showConfetti, setShowConfetti] = useState(false); const [replies, setReplies] = useState([]); const [liveFiles, setLiveFiles] = useState(data.payslips || []); const [newFiles, setNewFiles] = useState([]);
+  useEffect(() => {
+    let active = true;
+    let interval;
+    let isLoading = false;
+    const seenKey = `alrahma-seen-notifications-${data.national_id}`;
+    let initialized = false;
+    const loadReplies = async () => {
+      if (!supabase || isLoading) return;
+      isLoading = true;
+      try {
+        const [replyResponse, profileResponse] = await Promise.all([
+          fetch('/api/employee-messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId: data.national_id }), cache: 'no-store' }),
+          fetch('/api/employee-lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nationalId: data.national_id }), cache: 'no-store' }),
+        ]);
+        const [replyPayload, profilePayload] = await Promise.all([replyResponse.json().catch(() => null), profileResponse.json().catch(() => null)]);
+        if (!active || !replyResponse.ok) return;
+        const nextReplies = (replyPayload.messages || []).filter((message) => message.admin_reply);
+        setReplies(nextReplies);
+        const nextFiles = profileResponse.ok && Array.isArray(profilePayload?.payslips) ? profilePayload.payslips : data.payslips || [];
+        setLiveFiles(nextFiles);
+        let storedSeen = null;
+        try { storedSeen = JSON.parse(window.localStorage.getItem(seenKey) || 'null'); } catch {}
+        if (storedSeen === null) {
+          storedSeen = { replies: nextReplies.map((message) => message.id), files: nextFiles.map((file) => file.id) };
+          try { window.localStorage.setItem(seenKey, JSON.stringify(storedSeen)); } catch {}
+        }
+        const seenReplies = new Set(storedSeen.replies || []);
+        const seenFiles = new Set(storedSeen.files || []);
+        const addedFiles = initialized ? nextFiles.filter((file) => !seenFiles.has(file.id)) : [];
+        setNewFiles(addedFiles);
+        setHasUnread(nextReplies.some((message) => !seenReplies.has(message.id)) || addedFiles.length > 0);
+        initialized = true;
+      } catch { /* تحديث دوري؛ المحاولة التالية تعيد الاتصال تلقائياً */ }
+      finally { isLoading = false; }
+    };
+    loadReplies();
+    interval = window.setInterval(loadReplies, 15000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [data.national_id]);
   useEffect(() => { const currentKey = `alrahma-current-file-${new Date().getFullYear()}-${new Date().getMonth() + 1}`; if (!window.localStorage.getItem(currentKey)) { window.localStorage.setItem(currentKey, 'seen'); setShowConfetti(true); window.setTimeout(() => setShowConfetti(false), 1000); } }, []);
   const name = data.full_name || data.name;
   async function getFileUrl(file) { if (file.url) return file.url; if (file.storage_path) { try { const response = await fetch('/api/file-url', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId: file.id, nationalId: data.national_id }) }); const payload = await response.json().catch(() => null); return response.ok ? (payload?.url ?? '') : ''; } catch { return ''; } } return ''; }
   async function download(file) { const url = await getFileUrl(file); if (url) { const link = document.createElement('a'); link.href = url; link.download = file.file_name || `${file.category}-${file.month_label}-${file.year}`; link.target = '_blank'; link.rel = 'noopener'; document.body.appendChild(link); link.click(); link.remove(); } }
   async function whatsapp(file) { const url = await getFileUrl(file); const text = url ? `ملف ${file.category} - ${file.month_label} ${file.year}\n${url}` : `ملف ${file.category} - ${file.month_label} ${file.year}`; window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer'); }
-  return <main className="dashboard-page">{showConfetti && <ConfettiPop />}<header className="topbar"><Logo compact /><div className="topbar-actions"><button className="notification-button" aria-label="الإشعارات" onClick={() => { setNotifications(!notifications); setHasUnread(false); }}><Bell size={22} />{(hasUnread || replies.length > 0) && <i />}</button><motion.button whileHover={{ scale: 1.04, x: -2 }} whileTap={{ scale: .96 }} className="logout-button" onClick={onLogout}><LogOut size={17} /><span>خروج</span></motion.button></div></header>{notifications && <div className="notification-popover glass-card"><strong>الإشعارات</strong>{replies.length ? replies.slice(0, 3).map((message) => <div key={message.id} className="notif-item"><span className="notif-title">رد جديد من إدارة الموارد البشرية</span><span className="notif-body">{message.admin_reply}</span><small>{formatDate(message.replied_at)}</small></div>) : <span>تم تحديث ملفاتك المتاحة</span>}<small>{replies.length ? `${replies.length} رد على رسائلك` : 'منذ يومين'}</small><button onClick={() => { setHasUnread(false); setNotifications(false); setContact(true); }}>عرض رسائلي</button></div>}<div className="dashboard-content"><motion.div className="dashboard-intro" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}><div><h1>أهلاً بك، {name}</h1><p>ملفاتك وبياناتك في مكان واحد.</p></div></motion.div><motion.div className="cards-stack" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12 }}><EmployeeCard data={data} /><FilesSection data={data} onDownload={download} onWhatsApp={whatsapp} /></motion.div><motion.button whileHover={{ y: -3 }} whileTap={{ scale: .98 }} className="help-strip" onClick={() => setContact(true)}><div className="help-icon"><Phone size={18} /></div><div><strong>تواصل معنا</strong><span>استفسار أو شكوى</span></div><ChevronLeft size={19} /></motion.button></div><footer className="dashboard-footer"><span>© ٢٠٢٦ الرحمة المهداة للتوظيف</span><span><ShieldCheck size={13} /> خصوصيتك أولويتنا</span></footer><AnimatePresence>{contact && <ContactModal nationalId={data.national_id} onClose={() => setContact(false)} />}</AnimatePresence></main>;
+  return <main className="dashboard-page">{showConfetti && <ConfettiPop />}<header className="topbar"><Logo compact /><div className="topbar-actions"><button className="notification-button" aria-label="الإشعارات" onClick={() => { const next = !notifications; setNotifications(next); if (next) { setHasUnread(false); try { window.localStorage.setItem(`alrahma-seen-notifications-${data.national_id}`, JSON.stringify({ replies: replies.map((message) => message.id), files: liveFiles.map((file) => file.id) })); } catch {} } }}><Bell size={22} />{hasUnread && <i />}</button><motion.button whileHover={{ scale: 1.04, x: -2 }} whileTap={{ scale: .96 }} className="logout-button" onClick={onLogout}><LogOut size={17} /><span>خروج</span></motion.button></div></header>{notifications && <div className="notification-popover glass-card"><strong>الإشعارات</strong>{newFiles.map((file) => <div key={`file-${file.id}`} className="notif-item"><span className="notif-title">ملف جديد متاح</span><span className="notif-body">{file.category} · {file.month_label} {file.year}</span></div>)}{replies.slice(0, 3).map((message) => <div key={message.id} className="notif-item"><span className="notif-title">رد جديد من إدارة الموارد البشرية</span><span className="notif-body">{message.admin_reply}</span><small>{formatDate(message.replied_at)}</small></div>)}{!replies.length && !newFiles.length && <span>مفيش إشعارات جديدة دلوقتي</span>}<small>{newFiles.length ? `${newFiles.length} ملف جديد` : replies.length ? `${replies.length} رد على رسائلك` : 'تحديث تلقائي'}</small><button onClick={() => { setHasUnread(false); setNotifications(false); try { window.localStorage.setItem(`alrahma-seen-notifications-${data.national_id}`, JSON.stringify({ replies: replies.map((message) => message.id), files: liveFiles.map((file) => file.id) })); } catch {} setContact(true); }}>عرض رسائلي</button></div>}<div className="dashboard-content"><motion.div className="dashboard-intro" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}><div><h1>أهلاً بك، {name}</h1><p>ملفاتك وبياناتك في مكان واحد.</p></div></motion.div><motion.div className="cards-stack" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12 }}><EmployeeCard data={data} /><FilesSection data={{ ...data, payslips: liveFiles }} onDownload={download} onWhatsApp={whatsapp} /></motion.div><motion.button whileHover={{ y: -3 }} whileTap={{ scale: .98 }} className="help-strip" onClick={() => setContact(true)}><div className="help-icon"><Phone size={18} /></div><div><strong>تواصل معنا</strong><span>استفسار أو شكوى</span></div><ChevronLeft size={19} /></motion.button></div><footer className="dashboard-footer"><span>© ٢٠٢٦ الرحمة المهداة للتوظيف</span><span><ShieldCheck size={13} /> خصوصيتك أولويتنا</span></footer><AnimatePresence>{contact && <ContactModal nationalId={data.national_id} onClose={() => setContact(false)} />}</AnimatePresence></main>;
 }
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [data, setData] = useState(demoEmployee);
+  const [data, setData] = useState({ full_name: '', job_title: '', national_id: '', payslips: [] });
 
   useEffect(() => {
     try {

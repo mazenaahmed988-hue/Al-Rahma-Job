@@ -1,0 +1,23 @@
+# الاعتماديات
+node_modules/
+
+# أسرار ومتغيرات محلية
+.env
+.env.local
+
+# الشهادة وملفها السري
+certs/*.pfx
+certs/*.p12
+
+# مخرجات البناء
+dist/
+build/icon-png/
+
+# ملفات مساعدة
+qa/
+b1.txt
+b2.txt
+build-log*.txt
+
+# أدوات التوقيع الخارجية (مش محتاجة في الريبو)
+tools/win-tools/

@@ -1,7 +1,7 @@
 {
   "name": "al-rahma-al-muhdah-recruitment-system",
   "productName": "منظومة الرحمة المهداة للتوظيف",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "منظومة الرحمة المهداة للتوظيف — برنامج استلام وتسليم ملفات الموظفين",
   "main": "main.js",
   "scripts": {
