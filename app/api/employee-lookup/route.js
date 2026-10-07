@@ -11,22 +11,6 @@ function admin() {
 }
 
 /**
- * صورة الأفاتار مخزنة في bucket 'avatars' — بنجيب signed URL لوهي موجودة،
- * لأن المسار الخام مش بيشتغل من غير صلاحيات.
- */
-async function signedAvatar(db, path) {
-  if (!path) return null;
-  // لو القيمة أصلاً رابط كامل، نسيبها زي ما هي
-  if (/^https?:\/\//i.test(path)) return path;
-  try {
-    const { data, error } = await db.storage.from('avatars').createSignedUrl(path, 3600);
-    return error ? null : (data?.signedUrl ?? null);
-  } catch {
-    return null;
-  }
-}
-
-/**
  * بديل محلي لـ Supabase Edge Function اسمها employee-lookup.
  * بتدخّل بالرقم القومي (14 رقم) وبترجّع بيانات الموظف + ملفاته المتاحة.
  */
@@ -53,7 +37,7 @@ export async function POST(request) {
 
   const { data: employee, error: empError } = await db
     .from('employees')
-    .select('id, full_name, job_title, national_id, avatar_url, is_active')
+    .select('id, full_name, job_title, national_id, is_active')
     .eq('national_id', nationalId)
     .maybeSingle();
 
@@ -94,8 +78,6 @@ export async function POST(request) {
     full_name: employee.full_name,
     job_title: employee.job_title ?? '',
     national_id: employee.national_id,
-    // صورة الأفاتار مخزنة في bucket الصور، فبتجيب signed URL بدل المسار الخام
-    avatar_url: await signedAvatar(db, employee.avatar_url),
     is_active: true,
     payslips: visible,
   });

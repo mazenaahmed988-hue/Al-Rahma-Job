@@ -388,3 +388,63 @@ body { color: #0d2b29; }
 .upload-history__row--completed .upload-history__state { color: #1f7a4d; }
 .upload-history__row--processing .upload-history__state { color: #b07d3a; }
 .upload-history__row--failed .upload-history__state { color: #c0503a; }
+/* زرار التحميل العريض في بوابة الموظف (مكان سهم التحميل القديم) */
+.wide-download-button {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #17afa5, #078b84);
+  border: 0;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  box-shadow: 0 8px 18px rgba(13,128,121,.22);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.wide-download-button:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(13,128,121,.28); }
+.wide-download-button:disabled { cursor: default; opacity: .92; }
+.wide-download-label { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.wide-download-button.download-morph--loading { max-width: 100px; }
+.wide-download-button.download-morph--done { background: linear-gradient(135deg, #34b884, #1f9e6d); }
+.file-card .document-actions { align-items: center; }
+.file-card .wide-download-button { min-height: 44px; font-size: 13px; }
+@media (max-width: 560px) {
+  .wide-download-button { min-height: 48px; font-size: 14px; }
+}
+
+/* زرار المشاركة الذكي في بوابة الموظف (بيشارك الملف نفسه File مش مجرد رابط) */
+.wide-share-button {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 16px;
+  color: #0d3b3a;
+  background: linear-gradient(135deg, #e9fbf6, #d3f4ea);
+  border: 1.5px solid rgba(13,128,121,.28);
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .01em;
+  box-shadow: 0 6px 16px rgba(13,128,121,.12);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.wide-share-button:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(13,128,121,.18); background: linear-gradient(135deg, #ddf8f0, #c6efe4); }
+.wide-share-button:disabled { cursor: default; opacity: .92; }
+.wide-share-button.download-morph--done { background: linear-gradient(135deg, #34b884, #1f9e6d); color: #fff; border-color: transparent; }
+.wide-share-label { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.document-actions { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 620px) {
+  .document-actions { flex-direction: row; flex-wrap: wrap; }
+  .wide-download-button, .wide-share-button { flex: 1 1 200px; }
+}
