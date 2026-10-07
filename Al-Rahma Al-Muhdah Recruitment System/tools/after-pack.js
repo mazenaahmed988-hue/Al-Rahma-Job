@@ -29,8 +29,11 @@ module.exports = async function afterPack(context) {
     return;
   }
 
-  /** بيدوّر على الأداة في كل المسارات المحتملة (البنية بتختلف بين الإصدارات) */
+  /** بيدوّر على الأداة في كل المسارات المحتملة (البنية بتختلف بين الإصدارات)
+   *  بنفضّل النسخة الأحدث (windows-10/x64) لأنها بتدعم الـ timestamp بشكل موثوق،
+   *  وبنرجّع المسار المطلق الصح مع المسافات/الحروف العربية. */
   function findTool(fileName) {
+    const matches = [];
     const stack = [toolsRoot];
     while (stack.length) {
       const dir = stack.pop();
@@ -39,10 +42,20 @@ module.exports = async function afterPack(context) {
       for (const item of items) {
         const full = path.join(dir, item.name);
         if (item.isDirectory()) stack.push(full);
-        else if (item.name.toLowerCase() === fileName.toLowerCase()) return full;
+        else if (item.name.toLowerCase() === fileName.toLowerCase()) matches.push(full);
       }
     }
-    return null;
+    if (!matches.length) return null;
+    // بنرتّب بحيث windows-10/x64 تيجي الأول
+    const rank = (p) => {
+      const s = p.replace(/\\/g, '/').toLowerCase();
+      if (s.includes('windows-10/x64')) return 0;
+      if (s.includes('windows-10')) return 1;
+      if (s.includes('x64')) return 2;
+      return 3;
+    };
+    matches.sort((a, b) => rank(a) - rank(b));
+    return matches[0];
   }
 
   const rcedit = findTool('rcedit-x64.exe');
@@ -69,8 +82,8 @@ module.exports = async function afterPack(context) {
         '--set-version-string', 'FileDescription', 'منظومة الرحمة المهداة للتوظيف',
         '--set-version-string', 'InternalName', exeName,
         '--set-version-string', 'LegalCopyright', '(c) 2026 Al-Rahma Al-Muhdah',
-        '--set-file-version', '1.0.0.0',
-        '--set-product-version', '1.0.0.0',
+        '--set-file-version', '1.0.2.0',
+        '--set-product-version', '1.0.2.0',
       ], { stdio: 'pipe' });
       console.log('  • afterPack: الأيقونة اتحفرت في الـ exe ✅');
     } catch (err) {

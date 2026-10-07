@@ -18,6 +18,8 @@ qa/
 b1.txt
 b2.txt
 build-log*.txt
+build-*.log
+installer-*.log
 
 # أدوات التوقيع الخارجية (مش محتاجة في الريبو)
 tools/win-tools/

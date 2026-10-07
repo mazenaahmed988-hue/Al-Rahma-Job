@@ -18,6 +18,7 @@ const PFX_PASS = process.env.CSC_KEY_PASSWORD;
 if (!PFX_PASS) { console.error('❌ CSC_KEY_PASSWORD مش موجود'); process.exit(1); }
 
 function findTool(fileName) {
+  const matches = [];
   const stack = [toolsRoot];
   while (stack.length) {
     const dir = stack.pop();
@@ -26,10 +27,19 @@ function findTool(fileName) {
     for (const item of items) {
       const full = path.join(dir, item.name);
       if (item.isDirectory()) stack.push(full);
-      else if (item.name.toLowerCase() === fileName.toLowerCase()) return full;
+      else if (item.name.toLowerCase() === fileName.toLowerCase()) matches.push(full);
     }
   }
-  return null;
+  if (!matches.length) return null;
+  const rank = (p) => {
+    const s = p.replace(/\\/g, '/').toLowerCase();
+    if (s.includes('windows-10/x64')) return 0;
+    if (s.includes('windows-10')) return 1;
+    if (s.includes('x64')) return 2;
+    return 3;
+  };
+  matches.sort((a, b) => rank(a) - rank(b));
+  return matches[0];
 }
 
 function verify(file) {

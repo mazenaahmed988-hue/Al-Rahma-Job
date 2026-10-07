@@ -23,6 +23,7 @@ module.exports = async function afterSign(context) {
   }
 
   function findTool(fileName) {
+    const matches = [];
     const stack = [toolsRoot];
     while (stack.length) {
       const dir = stack.pop();
@@ -31,11 +32,19 @@ module.exports = async function afterSign(context) {
       for (const item of items) {
         const full = path.join(dir, item.name);
         if (item.isDirectory()) stack.push(full);
-        // بنفضّل نسخة x64 عشان التوافق
-        else if (item.name.toLowerCase() === fileName.toLowerCase()) return full;
+        else if (item.name.toLowerCase() === fileName.toLowerCase()) matches.push(full);
       }
     }
-    return null;
+    if (!matches.length) return null;
+    const rank = (p) => {
+      const s = p.replace(/\\/g, '/').toLowerCase();
+      if (s.includes('windows-10/x64')) return 0;
+      if (s.includes('windows-10')) return 1;
+      if (s.includes('x64')) return 2;
+      return 3;
+    };
+    matches.sort((a, b) => rank(a) - rank(b));
+    return matches[0];
   }
 
   const signtool = findTool('signtool.exe');
